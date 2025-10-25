@@ -1,7 +1,7 @@
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Получаем токен из переменных окружения Render
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("💻 Перейти в канал CoreNation", url=MAIN_CHANNEL_LINK)]
     ]
@@ -30,21 +30,21 @@ def start(update: Update, context: CallbackContext) -> None:
         "Нажми кнопку ниже, чтобы перейти в канал 👇"
     )
 
-    update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
-def handle_message(update: Update, context: CallbackContext) -> None:
+async def handle_message(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("💻 Перейти в канал CoreNation", url=MAIN_CHANNEL_LINK)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text(
+    await update.message.reply_text(
         "Используйте /start для основного меню\n"
         "Или нажмите кнопку ниже, чтобы перейти в наш канал 👇",
         reply_markup=reply_markup
     )
 
-def help_command(update: Update, context: CallbackContext) -> None:
+async def help_command(update: Update, context: CallbackContext) -> None:
     help_text = (
         "🤖 CoreNation Bot - перенаправитель в канал\n\n"
         "Доступные команды:\n"
@@ -59,9 +59,9 @@ def help_command(update: Update, context: CallbackContext) -> None:
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text(help_text, reply_markup=reply_markup)
+    await update.message.reply_text(help_text, reply_markup=reply_markup)
 
-def channel_command(update: Update, context: CallbackContext) -> None:
+async def channel_command(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("💻 Перейти в канал CoreNation", url=MAIN_CHANNEL_LINK)]
     ]
@@ -74,22 +74,19 @@ def channel_command(update: Update, context: CallbackContext) -> None:
         "Подписывайтесь и будьте частью нашего сообщества! 👇"
     )
 
-    update.message.reply_text(channel_text, reply_markup=reply_markup)
+    await update.message.reply_text(channel_text, reply_markup=reply_markup)
 
 def main() -> None:
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+    application = Application.builder().token(BOT_TOKEN).build()
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("channel", channel_command))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("channel", channel_command))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("🤖 Бот @corenation_bot запущен на Render!")
     print("🔗 Перенаправляет пользователей в:", MAIN_CHANNEL_LINK)
-    
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
